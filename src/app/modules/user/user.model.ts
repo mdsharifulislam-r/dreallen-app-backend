@@ -63,7 +63,11 @@ const userSchema = new Schema<IUser, UserModel>(
       required: true,
     },
   },
+<<<<<<< HEAD
   { timestamps: true },
+=======
+  { timestamps: true }
+>>>>>>> df3b487deb51f2a1bb9664109e78725280724a3f
 );
 
 /* ---------- Static Methods ---------- */
@@ -81,7 +85,11 @@ userSchema.statics.isExistUserByEmail = async function (email: string) {
 // Compare passwords
 userSchema.statics.isMatchPassword = async function (
   password: string,
+<<<<<<< HEAD
   hashPassword: string,
+=======
+  hashPassword: string
+>>>>>>> df3b487deb51f2a1bb9664109e78725280724a3f
 ): Promise<boolean> {
   return await bcrypt.compare(password, hashPassword);
 };
@@ -96,7 +104,11 @@ userSchema.pre('save', async function (next) {
       const isExist = await User.exists({ email: user.email });
       if (isExist) {
         return next(
+<<<<<<< HEAD
           new ApiError(StatusCodes.BAD_REQUEST, 'Account already exists!'),
+=======
+          new ApiError(StatusCodes.BAD_REQUEST, 'Account already exists!')
+>>>>>>> df3b487deb51f2a1bb9664109e78725280724a3f
         );
       }
     }
@@ -105,7 +117,11 @@ userSchema.pre('save', async function (next) {
   if (!this.isModified('password')) return next();
   this.password = await bcrypt.hash(
     this.password,
+<<<<<<< HEAD
     Number(config.bcrypt_salt_rounds),
+=======
+    Number(config.bcrypt_salt_rounds)
+>>>>>>> df3b487deb51f2a1bb9664109e78725280724a3f
   );
 
   next();

@@ -45,6 +45,10 @@ const createUserToDB = async (
   }
 
   let isValid = false;
+<<<<<<< HEAD
+=======
+  let authorization: { oneTimeCode: string; expireAt: Date } | null = null;
+>>>>>>> df3b487deb51f2a1bb9664109e78725280724a3f
 
   // GOOGLE
   if (
@@ -80,7 +84,16 @@ const createUserToDB = async (
     ) {
       isValid = true;
       payload.auth_provider = USER_AUTH_PROVIDER.LOCAL;
+<<<<<<< HEAD
       payload.verified = true;
+=======
+
+      const otp = generateOTP();
+      authorization = {
+        oneTimeCode: otp.toString(),
+        expireAt: new Date(Date.now() + 3 * 60000),
+      };
+>>>>>>> df3b487deb51f2a1bb9664109e78725280724a3f
     }
   }
 
@@ -90,6 +103,7 @@ const createUserToDB = async (
     throw new ApiError(StatusCodes.BAD_REQUEST, 'Failed to create user');
   }
 
+<<<<<<< HEAD
   // Create and return token for all valid user creations
   const createToken = jwtHelper.createToken(
     { id: createUser._id, role: createUser.role, email: createUser.email },
@@ -97,6 +111,31 @@ const createUserToDB = async (
     config.jwt.jwt_expire_in as string,
   );
   return { accessToken: createToken };
+=======
+  if (isValid && createUser && payload.auth_provider === USER_AUTH_PROVIDER.LOCAL) {
+    if (!authorization?.oneTimeCode || !createUser?.email) {
+      throw new ApiError(
+        StatusCodes.BAD_REQUEST,
+        'Failed to generate OTP or missing email',
+      );
+    }
+    const createAccountTemplate = emailTemplate.createAccount({
+      otp: authorization.oneTimeCode,
+      email: createUser.email,
+    });
+    emailHelper.sendEmail(createAccountTemplate);
+    await User.findByIdAndUpdate(createUser._id, { $set: { authorization } });
+    return createUser;
+  } else {
+    // create token
+    const createToken = jwtHelper.createToken(
+      { id: createUser._id, role: createUser.role, email: createUser.email },
+      config.jwt.jwt_secret as Secret,
+      config.jwt.jwt_expire_in as string,
+    );
+    return { accessToken: createToken };
+  }
+>>>>>>> df3b487deb51f2a1bb9664109e78725280724a3f
 };
 
 const getUserProfileFromDB = async (user: JwtPayload): Promise<any> => {
