@@ -42,7 +42,7 @@ const createUser = catchAsync(
       success: true,
       statusCode: StatusCodes.OK,
       message: 'User created successfully',
-      // data: result,
+      data: result,
     });
   }
 );

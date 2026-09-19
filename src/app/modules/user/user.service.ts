@@ -44,100 +44,76 @@ const createUserToDB = async (
     );
   }
 
-  let isValid = false;
-<<<<<<< HEAD
-=======
-  let authorization: { oneTimeCode: string; expireAt: Date } | null = null;
->>>>>>> df3b487deb51f2a1bb9664109e78725280724a3f
-
   // GOOGLE
   if (
     payload.auth_provider === USER_AUTH_PROVIDER.GOOGLE &&
     payload.google_id_token
   ) {
     const tokenData = await getUserInfoWithToken(payload.google_id_token);
+
     if (!tokenData?.data?.email) {
-      throw new ApiError(StatusCodes.BAD_REQUEST, 'Invalid Google token');
+      throw new ApiError(
+        StatusCodes.BAD_REQUEST,
+        'Invalid Google token',
+      );
     }
 
     payload.email = tokenData.data.email;
     payload.name = tokenData.data.name;
-    isValid = true;
     payload.verified = true;
+    payload.auth_provider = USER_AUTH_PROVIDER.GOOGLE;
 
-    const isGoogleUserExist = await User.findOne({ email: payload.email }).lean();
+    const existingUser = await User.findOne({
+      email: payload.email,
+    });
 
-    if (isGoogleUserExist) {
-      const createToken = jwtHelper.createToken(
-        { id: isGoogleUserExist._id, role: isGoogleUserExist.role, email: isGoogleUserExist.email },
+    if (existingUser) {
+      const accessToken = jwtHelper.createToken(
+        {
+          id: existingUser._id,
+          role: existingUser.role,
+          email: existingUser.email,
+        },
         config.jwt.jwt_secret as Secret,
         config.jwt.jwt_expire_in as string,
       );
-      return { accessToken: createToken };
+
+      return { accessToken };
     }
   }
-  // LOCAL
-  else {
-    if (
-      (payload.auth_provider === USER_AUTH_PROVIDER.LOCAL || !payload.auth_provider) &&
-      payload.password
-    ) {
-      isValid = true;
-      payload.auth_provider = USER_AUTH_PROVIDER.LOCAL;
-<<<<<<< HEAD
-      payload.verified = true;
-=======
 
-      const otp = generateOTP();
-      authorization = {
-        oneTimeCode: otp.toString(),
-        expireAt: new Date(Date.now() + 3 * 60000),
-      };
->>>>>>> df3b487deb51f2a1bb9664109e78725280724a3f
-    }
+  // LOCAL
+  if (
+    (payload.auth_provider === USER_AUTH_PROVIDER.LOCAL ||
+      !payload.auth_provider) &&
+    payload.password
+  ) {
+    payload.auth_provider = USER_AUTH_PROVIDER.LOCAL;
+    payload.verified = true;
   }
 
   const createUser = await User.create(payload);
 
-  if (!createUser || !isValid) {
-    throw new ApiError(StatusCodes.BAD_REQUEST, 'Failed to create user');
+  if (!createUser) {
+    throw new ApiError(
+      StatusCodes.BAD_REQUEST,
+      'Failed to create user',
+    );
   }
 
-<<<<<<< HEAD
-  // Create and return token for all valid user creations
-  const createToken = jwtHelper.createToken(
-    { id: createUser._id, role: createUser.role, email: createUser.email },
+  // Create token immediately after registration
+  const accessToken = jwtHelper.createToken(
+    {
+      id: createUser._id,
+      role: createUser.role,
+      email: createUser.email,
+    },
     config.jwt.jwt_secret as Secret,
     config.jwt.jwt_expire_in as string,
   );
-  return { accessToken: createToken };
-=======
-  if (isValid && createUser && payload.auth_provider === USER_AUTH_PROVIDER.LOCAL) {
-    if (!authorization?.oneTimeCode || !createUser?.email) {
-      throw new ApiError(
-        StatusCodes.BAD_REQUEST,
-        'Failed to generate OTP or missing email',
-      );
-    }
-    const createAccountTemplate = emailTemplate.createAccount({
-      otp: authorization.oneTimeCode,
-      email: createUser.email,
-    });
-    emailHelper.sendEmail(createAccountTemplate);
-    await User.findByIdAndUpdate(createUser._id, { $set: { authorization } });
-    return createUser;
-  } else {
-    // create token
-    const createToken = jwtHelper.createToken(
-      { id: createUser._id, role: createUser.role, email: createUser.email },
-      config.jwt.jwt_secret as Secret,
-      config.jwt.jwt_expire_in as string,
-    );
-    return { accessToken: createToken };
-  }
->>>>>>> df3b487deb51f2a1bb9664109e78725280724a3f
-};
 
+  return { accessToken };
+};
 const getUserProfileFromDB = async (user: JwtPayload): Promise<any> => {
   console.log(user);
   const { id } = user;
