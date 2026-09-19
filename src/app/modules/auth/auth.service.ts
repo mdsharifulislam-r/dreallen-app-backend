@@ -146,12 +146,12 @@ const verifyEmailToDB = async (otp: string) => {
     throw new ApiError(StatusCodes.BAD_REQUEST, 'OTP is not valid.');
   }
 
-  if (registeredUser.verified) {
-    throw new ApiError(
-      StatusCodes.BAD_REQUEST,
-      'This account already verified'
-    );
-  }
+  // if (registeredUser.verified) {
+  //   throw new ApiError(
+  //     StatusCodes.BAD_REQUEST,
+  //     'This account already verified'
+  //   );
+  // }
 
   // Check if authentication, OTP, and expireAt exist
   if (!registeredUser?.authorization?.oneTimeCode) {
@@ -301,12 +301,12 @@ const changePasswordToDB = async (
 const resendEmailToDB = async (email: string) => {
   const registeredUser = await User.findOne({ email }).lean();
 
-  if (registeredUser?.verified) {
-    throw new ApiError(
-      StatusCodes.BAD_REQUEST,
-      'This account already verified'
-    );
-  }
+  // if (registeredUser?.verified) {
+  //   throw new ApiError(
+  //     StatusCodes.BAD_REQUEST,
+  //     'This account already verified'
+  //   );
+  // }
 
   if (!registeredUser) {
     throw new ApiError(StatusCodes.BAD_REQUEST, 'User not found');
@@ -338,12 +338,12 @@ const verifyOTP = async (email: string, otp: string) => {
     throw new ApiError(StatusCodes.BAD_REQUEST, 'User not found');
   }
 
-  if (registeredUser?.verified) {
-    throw new ApiError(
-      StatusCodes.BAD_REQUEST,
-      'This account already verified'
-    );
-  }
+  // if (registeredUser?.verified) {
+  //   throw new ApiError(
+  //     StatusCodes.BAD_REQUEST,
+  //     'This account already verified'
+  //   );
+  // }
 
   // Check if OTP is valid and not expired
   if (
