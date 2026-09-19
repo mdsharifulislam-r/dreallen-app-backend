@@ -9,6 +9,7 @@ export interface IUser {
   confirm_password?: string;
   password: string;
   role: USER_ROLES;
+  songs_alarm: boolean;
   status: 'active' | 'delete';
   verified: boolean;
   image: string;

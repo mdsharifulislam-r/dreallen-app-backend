@@ -34,10 +34,9 @@ const willBeDeleteUser = async (email: string, password: string) => {
   await user.save();
   return user;
 };
-
 const createUserToDB = async (
   payload: Partial<IUser>,
-): Promise<IUser | { accessToken: string }> => {
+): Promise<{ accessToken: string }> => {
   if (!payload.password && !payload.google_id_token) {
     throw new ApiError(
       StatusCodes.BAD_REQUEST,
@@ -46,7 +45,6 @@ const createUserToDB = async (
   }
 
   let isValid = false;
-  let authorization: { oneTimeCode: string; expireAt: Date } | null = null;
 
   // GOOGLE
   if (
@@ -82,12 +80,7 @@ const createUserToDB = async (
     ) {
       isValid = true;
       payload.auth_provider = USER_AUTH_PROVIDER.LOCAL;
-
-      const otp = generateOTP();
-      authorization = {
-        oneTimeCode: otp.toString(),
-        expireAt: new Date(Date.now() + 3 * 60000),
-      };
+      payload.verified = true;
     }
   }
 
@@ -97,29 +90,13 @@ const createUserToDB = async (
     throw new ApiError(StatusCodes.BAD_REQUEST, 'Failed to create user');
   }
 
-  if (isValid && createUser && payload.auth_provider === USER_AUTH_PROVIDER.LOCAL) {
-    if (!authorization?.oneTimeCode || !createUser?.email) {
-      throw new ApiError(
-        StatusCodes.BAD_REQUEST,
-        'Failed to generate OTP or missing email',
-      );
-    }
-    const createAccountTemplate = emailTemplate.createAccount({
-      otp: authorization.oneTimeCode,
-      email: createUser.email,
-    });
-    emailHelper.sendEmail(createAccountTemplate);
-    await User.findByIdAndUpdate(createUser._id, { $set: { authorization } });
-    return createUser;
-  } else {
-    // create token
-    const createToken = jwtHelper.createToken(
-      { id: createUser._id, role: createUser.role, email: createUser.email },
-      config.jwt.jwt_secret as Secret,
-      config.jwt.jwt_expire_in as string,
-    );
-    return { accessToken: createToken };
-  }
+  // Create and return token for all valid user creations
+  const createToken = jwtHelper.createToken(
+    { id: createUser._id, role: createUser.role, email: createUser.email },
+    config.jwt.jwt_secret as Secret,
+    config.jwt.jwt_expire_in as string,
+  );
+  return { accessToken: createToken };
 };
 
 const getUserProfileFromDB = async (user: JwtPayload): Promise<any> => {

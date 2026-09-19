@@ -41,6 +41,10 @@ const userSchema = new Schema<IUser, UserModel>(
     },
     verified: {
       type: Boolean,
+      default: true,
+    },
+    songs_alarm: {
+      type: Boolean,
       default: false,
     },
     authorization: {
@@ -59,7 +63,7 @@ const userSchema = new Schema<IUser, UserModel>(
       required: true,
     },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 /* ---------- Static Methods ---------- */
@@ -77,7 +81,7 @@ userSchema.statics.isExistUserByEmail = async function (email: string) {
 // Compare passwords
 userSchema.statics.isMatchPassword = async function (
   password: string,
-  hashPassword: string
+  hashPassword: string,
 ): Promise<boolean> {
   return await bcrypt.compare(password, hashPassword);
 };
@@ -92,7 +96,7 @@ userSchema.pre('save', async function (next) {
       const isExist = await User.exists({ email: user.email });
       if (isExist) {
         return next(
-          new ApiError(StatusCodes.BAD_REQUEST, 'Account already exists!')
+          new ApiError(StatusCodes.BAD_REQUEST, 'Account already exists!'),
         );
       }
     }
@@ -101,7 +105,7 @@ userSchema.pre('save', async function (next) {
   if (!this.isModified('password')) return next();
   this.password = await bcrypt.hash(
     this.password,
-    Number(config.bcrypt_salt_rounds)
+    Number(config.bcrypt_salt_rounds),
   );
 
   next();
