@@ -130,6 +130,19 @@ const deletePlaylist = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const getPlaylistSongs = catchAsync(async (req: Request, res: Response) => {
+  const { id } = req.params;
+  const result = await PlaylistService.getSongsByPlaylistId(id, req.query);
+
+  sendResponse(res, {
+    statusCode: StatusCodes.OK,
+    success: true,
+    message: 'Playlist songs retrieved successfully',
+    data: result.data,
+    pagination: result.pagination,
+  });
+});
+
 export const PlaylistController = {
   createPlaylist,
   getAllPlaylists,
@@ -139,4 +152,5 @@ export const PlaylistController = {
   addSongToPlaylist,
   removeSongFromPlaylist,
   deletePlaylist,
+  getPlaylistSongs,
 };

@@ -38,6 +38,14 @@ const songSchema = new Schema<ISong, SongModel>(
     audio: {
       type: String,
     },
+    averageRating: {
+      type: Number,
+      default: 0,
+    },
+    ratingCount: {
+      type: Number,
+      default: 0,
+    },
   },
   {
     timestamps: true,

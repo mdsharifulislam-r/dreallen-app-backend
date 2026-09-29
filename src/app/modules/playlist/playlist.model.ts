@@ -1,5 +1,5 @@
 import { Schema, model } from 'mongoose';
-import { IPlaylist, PlaylistModel } from './playlist.interface';
+import { IPlaylist, IPlaylistSong, PlaylistModel, PlaylistSongModel } from './playlist.interface';
 
 const playlistSchema = new Schema<IPlaylist, PlaylistModel>(
   {
@@ -47,3 +47,30 @@ export const Playlist = model<IPlaylist, PlaylistModel>(
   'Playlist',
   playlistSchema
 );
+
+
+const playlistSongSchema = new Schema<IPlaylistSong, PlaylistSongModel>({
+  playlist: {
+    type: Schema.Types.ObjectId,
+    ref: 'Playlist',
+    required: true,
+  },
+  song: {
+    type: Schema.Types.ObjectId,
+    refPath: 'type',
+    required: true,
+  },
+  type: {
+    type: String,
+    enum: ['Song', 'Video'],
+    required: true,
+  },
+});
+
+playlistSongSchema.pre('save', async function (next) {
+
+  await Playlist.findOneAndUpdate({_id:this.playlist},{$inc:{songCount:1}})
+  next();
+});
+
+export const PlaylistSong = model<IPlaylistSong, PlaylistSongModel>('PlaylistSong', playlistSongSchema);

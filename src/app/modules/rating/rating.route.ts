@@ -11,4 +11,16 @@ router.post(
   RatingController.giveRating
 );
 
+router.get(
+  '/:id',
+  auth(USER_ROLES.ADMIN, USER_ROLES.USER, USER_ROLES.SUPER_ADMIN),
+  RatingController.getAllRatings
+)
+
+router.delete(
+  '/:id',
+  auth(USER_ROLES.ADMIN, USER_ROLES.USER, USER_ROLES.SUPER_ADMIN),
+  RatingController.deleteRating
+)
+
 export const RatingRoutes = router;

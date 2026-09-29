@@ -42,6 +42,14 @@ const videoSchema = new Schema<IVideo, VideoModel>(
       type: Boolean,
       default: false,
     },
+    avgRating: {
+      type: Number,
+      default: 0,
+    },
+    ratingCount: {
+      type: Number,
+      default: 0,
+    },
   },
   {
     timestamps: true,

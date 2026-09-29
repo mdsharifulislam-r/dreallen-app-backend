@@ -1,0 +1,46 @@
+
+import { INotification } from "../app/modules/notification/notification.interface";
+import { Notification } from "../app/modules/notification/notification.model";
+import { User } from "../app/modules/user/user.model";
+import { USER_ROLES } from "../enums/user";
+
+export const sendNotifications = async (
+  data: INotification,
+  session?: any
+): Promise<INotification> => {
+  const result = await Notification.create([data], { session });
+
+
+    const socketIo = (global as any).io;
+
+
+  if (socketIo) {
+    socketIo.emit(`get-notification::${data?.receiver![0]}`, result[0]);
+  }
+
+  return result[0];
+};
+export const sendNotificationsAdmin = async (
+  data: INotification
+): Promise<INotification> => {
+  
+
+
+  const socketIo = (global as any).io;
+
+  const users = await User.find({ role: { $in: [USER_ROLES.ADMIN,USER_ROLES.SUPER_ADMIN] } });
+  data.receiver = users.map((user) => user._id);
+  const result = await Notification.create(data);
+
+  if (socketIo) {
+   users.forEach((user) => {
+      socketIo.emit(`get-notification::${user._id}`, result);
+    });
+  }
+
+  return result;
+};
+
+
+
+

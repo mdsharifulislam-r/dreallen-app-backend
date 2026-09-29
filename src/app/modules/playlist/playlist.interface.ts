@@ -15,3 +15,12 @@ export interface IPlaylist {
 }
 
 export type PlaylistModel = Model<IPlaylist>;
+
+
+export interface IPlaylistSong {
+  playlist: Types.ObjectId;
+  song: Types.ObjectId;
+  type:"Song" | "Video";
+}
+
+export type PlaylistSongModel = Model<IPlaylistSong>;

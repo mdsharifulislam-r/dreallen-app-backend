@@ -21,6 +21,7 @@ import { IUser } from '../user/user.interface';
 import generateOTP from '../../../util/generateOTP';
 import { ICreateAccount } from '../../../types/emailTamplate';
 import { updateUserAccessFeature } from '../../../util/updateUserAccessFeature';
+import { sendNotifications } from '../../../helpers/notificationHelper';
 
 //login
 const loginUserFromDB = async (payload: ILoginData) => {
@@ -187,6 +188,13 @@ const verifyEmailToDB = async (otp: string) => {
     },
     { new: true }
   );
+  sendNotifications({
+    title:'New User Registered',
+    message:`${registeredUser.name} has registered`,
+    isRead:false,
+    filePath:"general",
+    referenceId:registeredUser._id
+  })
   await updateUserAccessFeature(registeredUser?._id as any);
 
   //create token

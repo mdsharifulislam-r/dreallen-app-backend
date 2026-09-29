@@ -12,6 +12,7 @@ const giveRating = catchAsync(async (req: Request, res: Response) => {
     userId,
     targetId,
     rating,
+    review: req.body?.review
   });
 
   sendResponse(res, {
@@ -22,6 +23,33 @@ const giveRating = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+
+const getAllRatings = catchAsync(async (req: Request, res: Response) => {
+  const result = await RatingService.getReviewsFromDB(req.params.id,req.query as Record<string, any>);
+
+  sendResponse(res, {
+    statusCode: StatusCodes.OK,
+    success: true,
+    message: 'Ratings retrieved successfully',
+    pagination: result.pagination,
+    data: result.data,
+  });
+});
+
+
+const deleteRating = catchAsync(async (req: Request, res: Response) => {
+  const result = await RatingService.deleteRatingInDB(req.params.id);
+
+  sendResponse(res, {
+    statusCode: StatusCodes.OK,
+    success: true,
+    message: 'Rating deleted successfully',
+    data: result,
+  });
+});
+
 export const RatingController = {
   giveRating,
+  getAllRatings,
+  deleteRating
 };

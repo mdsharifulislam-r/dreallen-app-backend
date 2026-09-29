@@ -104,12 +104,8 @@ const getVideoByIdFromDB = async (id: string, userId: string): Promise<IVideo> =
   ]);
 
   console.log("isFavoriteDoc", isFavoriteDoc)
-  console.log("myRatingDoc", myRatingDoc)
-  console.log("averageRatingDoc", averageRatingDoc)
   // Attach computed properties to the video object
   video.isFavorite = isFavoriteDoc?._id ? true : false;
-  video.myRating = myRatingDoc?.rating || 0;
-  video.rating = averageRatingDoc?.rating || 0;
 
   return video;
 };

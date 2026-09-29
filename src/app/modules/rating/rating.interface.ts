@@ -6,6 +6,7 @@ export interface IRating {
   userId: Types.ObjectId;
   targetId: Types.ObjectId;
   rating: number;
+  review?: string;
   createdAt?: Date;
   updatedAt?: Date;
 }

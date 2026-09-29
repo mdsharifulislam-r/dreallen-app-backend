@@ -56,4 +56,10 @@ router.delete(
   PlaylistController.deletePlaylist
 );
 
+router.get(
+  '/:id/songs',
+  auth(USER_ROLES.ADMIN, USER_ROLES.USER, USER_ROLES.SUPER_ADMIN),
+  PlaylistController.getPlaylistSongs
+);
+
 export const PlaylistRoutes = router;

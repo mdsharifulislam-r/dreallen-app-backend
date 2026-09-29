@@ -14,6 +14,10 @@ import { IUser } from './user.interface';
 import { User } from './user.model';
 import { getUserInfoWithToken } from './user.util';
 import generateOTP from '../../../util/generateOTP';
+import { Song } from '../song/song.model';
+import { Video } from '../video/video.model';
+import { Bts } from '../bts/bts.model';
+import { Subscription } from '../subscription/subscription.model';
 
 const willBeDeleteUser = async (email: string, password: string) => {
   const user = await User.findOne({ email }).select('+password');
@@ -277,11 +281,25 @@ const getUserStatistics = async (year: number, _userId?: string) => {
 
 const statistics = async () => {
   const totalUser = await User.countDocuments({ verified: true });
+  const totalSongs = await Song.countDocuments({});
+  const totalVideos = await Video.countDocuments({});
+  const totalBTs = await Bts.countDocuments({});
+  const totalRavanue = await Subscription.aggregate([
+    {
+      $group: {
+        _id: null,
+        total: { $sum: '$price' },
+      },
+    }
+  ])
+
 
   return {
     totalUser,
-    totalRevenue: 0,
-    totalOrder: 0,
+    totalSongs,
+    totalVideos,
+    totalBTs,
+    totalRavanue: totalRavanue.length > 0 ? totalRavanue[0].total : 0
   };
 };
 
@@ -301,14 +319,43 @@ const getAllEarningStatistics = async (year: number) => {
     'Dec',
   ];
 
-  const earningStats = months.map(month => ({
-    month,
-    earning: 0,
-  }));
+  const startDate = new Date(Date.UTC(year, 0, 1, 0, 0, 0, 0));
+  const endDate = new Date(Date.UTC(year, 11, 31, 23, 59, 59, 999));
+
+  const earningsByMonth = await Subscription.aggregate([
+    {
+      $match: {
+        createdAt: { $gte: startDate, $lte: endDate },
+      },
+    },
+    {
+      $group: {
+        _id: { month: { $month: '$createdAt' } },
+        earning: { $sum: '$price' },
+      },
+    },
+  ]);
+
+  const monthToEarning = Array(12).fill(0);
+  earningsByMonth.forEach((item: any) => {
+    monthToEarning[item._id.month - 1] = item.earning;
+  });
+
+  const now = new Date();
+  const isThisYear = year === now.getFullYear();
+  const limitMonth = isThisYear ? now.getMonth() + 1 : 12;
+
+  const earningStats = [];
+  let totalEarning = 0;
+  for (let i = 0; i < limitMonth; i++) {
+    const earning = monthToEarning[i];
+    totalEarning += earning;
+    earningStats.push({ month: months[i], earning });
+  }
 
   return {
     year,
-    totalEarning: 0,
+    totalEarning,
     earningStats,
   };
 };
