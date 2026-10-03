@@ -5,6 +5,7 @@ import sendResponse from '../../../shared/sendResponse';
 import { SongService } from './song.service';
 import { getSingleFilePath } from '../../../shared/getFilePath';
 import { getAudioDuration } from '../../../shared/getAudioDuration';
+import path from 'path';
 
 const getAllSongs = catchAsync(async (req: Request, res: Response) => {
   const result = await SongService.getAllSongsFromDB(req.query as Record<string, any>);
@@ -58,20 +59,18 @@ const recordPlay = catchAsync(async (req: Request, res: Response) => {
 });
 
 const createSong = catchAsync(async (req: Request, res: Response) => {
-  const audio = getSingleFilePath(req.files, 'audio');
   const coverImage = getSingleFilePath(req.files, 'cover_image');
 
   let duration = req.body.duration;
-  const audioFile = req.files && (req.files as any)['audio']?.[0];
 
-  if (audioFile?.path) {
-    const autoDuration = await getAudioDuration(audioFile.path);
+  if (req.body.audio) {
+    const autoDuration = await getAudioDuration(path.join(process.cwd(), 'uploads', req.body.audio));
     if (autoDuration) {
       duration = autoDuration;
     }
   }
 
-  const data = { ...req.body, audio, cover_image: coverImage, duration };
+  const data = { ...req.body, cover_image: coverImage, duration };
 
   const result = await SongService.createSongInDB(data);
 

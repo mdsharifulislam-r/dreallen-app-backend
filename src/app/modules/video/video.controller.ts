@@ -5,7 +5,7 @@ import sendResponse from '../../../shared/sendResponse';
 import { VideoService } from './video.service';
 import { getSingleFilePath } from '../../../shared/getFilePath';
 import { getAudioDuration } from '../../../shared/getAudioDuration';
-
+import path from 'path';
 const getAllVideos = catchAsync(async (req: Request, res: Response) => {
   const result = await VideoService.getAllVideosFromDB(req.query as Record<string, any>);
 
@@ -60,20 +60,19 @@ const recordPlay = catchAsync(async (req: Request, res: Response) => {
 });
 
 const createVideo = catchAsync(async (req: Request, res: Response) => {
-  const video = getSingleFilePath(req.files, 'video');
   const coverImage = getSingleFilePath(req.files, 'cover_image');
 
   let duration = req.body.duration;
-  const videoFile = req.files && (req.files as any)['video']?.[0];
 
-  if (videoFile?.path) {
-    const autoDuration = await getAudioDuration(videoFile.path);
+
+  if (req.body.video) {
+    const autoDuration = await getAudioDuration(path.join(process.cwd(),'uploads', req.body.video));
     if (autoDuration) {
       duration = autoDuration;
     }
   }
 
-  const data = { ...req.body, video, cover_image: coverImage, duration };
+  const data = { ...req.body, cover_image: coverImage, duration };
 
   const result = await VideoService.createVideoInDB(data);
 

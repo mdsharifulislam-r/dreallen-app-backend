@@ -5,9 +5,7 @@ import { getSingleFilePath } from '../../../shared/getFilePath';
 
 const createBts = catchAsync(async (req: Request, res: Response) => {
     req.body.author = req.user?.id
-    const video = getSingleFilePath(req.files, 'video');
     const image = getSingleFilePath(req.files, 'image');
-    if(video) req.body.video = video
     if(image) req.body.thumbnail = image
     const result = await BtsServices.createBts(req.body);
     res.status(200).json({
@@ -45,10 +43,7 @@ const getBtsById = catchAsync(async (req: Request, res: Response) => {
 
 const updateBts = catchAsync(async (req: Request, res: Response) => {
     const { id } = req.params;
-    const video = getSingleFilePath(req.files, 'video');
     const image = getSingleFilePath(req.files, 'image');
-    console.log(video)
-    if(video) req.body.video = video
     if(image) req.body.thumbnail = image
     const result = await BtsServices.updateBts(id, req.body);
     res.status(200).json({

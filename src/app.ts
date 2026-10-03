@@ -5,7 +5,10 @@ import globalErrorHandler from './app/middlewares/globalErrorHandler';
 import router from './routes';
 import bodyParser from 'body-parser'
 import { Morgan } from './shared/morgen';
+import multer from 'multer';
+import { handleChunkUpload } from './helpers/handleChunkUpload';
 const app = express();
+const upload = multer();
 
 //body parser
 app.use(cors({
@@ -20,6 +23,7 @@ app.use(bodyParser.urlencoded({extended:true, limit:'50mb'}));
 app.use(express.static('uploads'));
 
 //router
+app.post('/api/v1/upload/chunk',upload.single('chunk'), handleChunkUpload);
 app.use('/api/v1', router);
 
 //live response
