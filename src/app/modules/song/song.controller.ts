@@ -3,7 +3,10 @@ import { StatusCodes } from 'http-status-codes';
 import catchAsync from '../../../shared/catchAsync';
 import sendResponse from '../../../shared/sendResponse';
 import { SongService } from './song.service';
-import { getSingleFilePath } from '../../../shared/getFilePath';
+import {
+  getSingleFilePath,
+  getSingleUploadedFile,
+} from '../../../shared/getFilePath';
 import { getAudioDuration } from '../../../shared/getAudioDuration';
 import path from 'path';
 
@@ -60,17 +63,28 @@ const recordPlay = catchAsync(async (req: Request, res: Response) => {
 
 const createSong = catchAsync(async (req: Request, res: Response) => {
   const coverImage = getSingleFilePath(req.files, 'cover_image');
+  const audioFile = getSingleUploadedFile(req.files, 'audio');
 
   let duration = req.body.duration;
 
-  if (req.body.audio) {
-    const autoDuration = await getAudioDuration(path.join(process.cwd(), 'uploads', req.body.audio));
+  const audioPath =
+    audioFile?.path ||
+    (req.body.audio && !/^https?:\/\//i.test(req.body.audio)
+      ? path.join(process.cwd(), 'uploads', req.body.audio)
+      : undefined);
+  if (audioPath) {
+    const autoDuration = await getAudioDuration(audioPath);
     if (autoDuration) {
       duration = autoDuration;
     }
   }
 
-  const data = { ...req.body, cover_image: coverImage, duration };
+  const data = {
+    ...req.body,
+    ...(audioFile && { audio: getSingleFilePath(req.files, 'audio') }),
+    cover_image: coverImage,
+    duration,
+  };
 
   const result = await SongService.createSongInDB(data);
 

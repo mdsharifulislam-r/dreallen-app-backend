@@ -3,7 +3,10 @@ import { StatusCodes } from 'http-status-codes';
 import catchAsync from '../../../shared/catchAsync';
 import sendResponse from '../../../shared/sendResponse';
 import { VideoService } from './video.service';
-import { getSingleFilePath } from '../../../shared/getFilePath';
+import {
+  getSingleFilePath,
+  getSingleUploadedFile,
+} from '../../../shared/getFilePath';
 import { getAudioDuration } from '../../../shared/getAudioDuration';
 import path from 'path';
 const getAllVideos = catchAsync(async (req: Request, res: Response) => {
@@ -61,18 +64,28 @@ const recordPlay = catchAsync(async (req: Request, res: Response) => {
 
 const createVideo = catchAsync(async (req: Request, res: Response) => {
   const coverImage = getSingleFilePath(req.files, 'cover_image');
+  const videoFile = getSingleUploadedFile(req.files, 'video');
 
   let duration = req.body.duration;
 
-
-  if (req.body.video) {
-    const autoDuration = await getAudioDuration(path.join(process.cwd(),'uploads', req.body.video));
+  const localVideoPath =
+    videoFile?.path ||
+    (req.body.video && !/^https?:\/\//i.test(req.body.video)
+      ? path.join(process.cwd(), 'uploads', req.body.video)
+      : undefined);
+  if (localVideoPath) {
+    const autoDuration = await getAudioDuration(localVideoPath);
     if (autoDuration) {
       duration = autoDuration;
     }
   }
 
-  const data = { ...req.body, cover_image: coverImage, duration };
+  const data = {
+    ...req.body,
+    ...(videoFile && { video: getSingleFilePath(req.files, 'video') }),
+    cover_image: coverImage,
+    duration,
+  };
 
   const result = await VideoService.createVideoInDB(data);
 

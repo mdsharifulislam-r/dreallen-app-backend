@@ -89,7 +89,34 @@ Ensure you have the following installed:
    EMAIL_PASS=mkqcfjeqloothyax
    EMAIL_PORT=587
    EMAIL_HOST=smtp.gmail.com
+
+   # DigitalOcean Spaces
+   SPACES_ACCESS_KEY_ID=your_spaces_access_key_id
+   SPACES_SECRET_ACCESS_KEY=your_spaces_secret_access_key
+   SPACES_BUCKET=urban-music-flow-media
+   # Spaces datacenter (used to build the endpoint)
+   SPACES_REGION=nyc3
+   SPACES_ENDPOINT=https://nyc3.digitaloceanspaces.com
    ```
+
+   Create a Spaces access key with the required bucket permissions and keep the
+   key and secret only in `.env` or your deployment secret manager. Uploaded
+   objects are written with public-read access and API responses store their
+   public Spaces object URLs. Set `SPACES_REGION` and `SPACES_ENDPOINT` to the
+   bucket's actual Spaces datacenter. Multipart and chunked uploads use the
+   same uploader. If a key has been exposed, revoke it in DigitalOcean and
+   create a new bucket-scoped key before updating the environment and restarting
+   the application. Startup validates required settings and checks that the API
+   endpoint matches the configured region; it cannot verify that a key is valid.
+
+   After setting newly generated credentials, verify access with:
+
+   ```bash
+   npm run spaces:check
+   ```
+
+   This creates and deletes a temporary text object under `healthcheck/` and
+   prints only the result, never the access key, secret, or object URL.
 
 4. **Run the project:**
 

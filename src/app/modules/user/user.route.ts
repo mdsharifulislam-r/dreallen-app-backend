@@ -26,6 +26,7 @@ router
   .route('/')
   .get(auth(USER_ROLES.ADMIN, USER_ROLES.USER, USER_ROLES.SUPER_ADMIN), UserController.getAllUsers)
   .post(
+    fileUploadHandler(),
     UserController.createUser
   );
 

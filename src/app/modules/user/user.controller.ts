@@ -17,6 +17,8 @@ const createUser = catchAsync(
       google_id_token,
       auth_provider,
     } = req.body;
+    const image =
+      getSingleFilePath(req.files, 'image') || req.body.image;
 
     const result = await UserService.createUserToDB({
       name,
@@ -25,6 +27,7 @@ const createUser = catchAsync(
       confirm_password,
       google_id_token,
       auth_provider,
+      image,
     });
 
     // sendResponse(res, {

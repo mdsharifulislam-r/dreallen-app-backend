@@ -1,21 +1,24 @@
-import { Request } from 'express';
-import fs from 'fs';
+import { NextFunction, Request } from 'express';
+import fs, { createReadStream } from 'fs';
 import { StatusCodes } from 'http-status-codes';
 import multer, { FileFilterCallback } from 'multer';
 import path from 'path';
+import { randomUUID } from 'crypto';
 import ApiError from '../../errors/ApiError';
+import { getUploadedFiles } from '../../shared/getFilePath';
+import { uploadToSpaces } from '../../shared/uploadToSpaces';
 
 const fileUploadHandler = () => {
   //create upload folder
   const baseUploadDir = path.join(process.cwd(), 'uploads');
   if (!fs.existsSync(baseUploadDir)) {
-    fs.mkdirSync(baseUploadDir);
+    fs.mkdirSync(baseUploadDir, { recursive: true });
   }
 
   //folder create for different file
   const createDir = (dirPath: string) => {
     if (!fs.existsSync(dirPath)) {
-      fs.mkdirSync(dirPath);
+      fs.mkdirSync(dirPath, { recursive: true });
     }
   };
 
@@ -50,15 +53,14 @@ const fileUploadHandler = () => {
     },
     filename: (req, file, cb) => {
       const fileExt = path.extname(file.originalname);
-      const fileName =
-        file.originalname
+      const fileName = path
+        .basename(file.originalname)
           .replace(fileExt, '')
           .toLowerCase()
           .split(' ')
           .join('-') +
         '-' +
-        Date.now();
-      console.log(fileName, fileExt);
+        randomUUID();
       cb(null, fileName + fileExt);
     },
   });
@@ -128,7 +130,7 @@ const fileUploadHandler = () => {
     }
   };
 
-  const upload = multer({
+  const parseFiles = multer({
     storage: storage,
     fileFilter: filterFilter,
   }).fields([
@@ -139,7 +141,69 @@ const fileUploadHandler = () => {
     { name: 'audio', maxCount: 3 },
     { name: 'video', maxCount: 3 },
   ]);
-  return upload;
+
+  return (req: any, res:any, next: NextFunction) => {
+    parseFiles(req, res, (parseError) => {
+      const files = getUploadedFiles(req.files);
+      let cleanupScheduled = false;
+      const scheduleCleanup = () => {
+        if (cleanupScheduled) return;
+        cleanupScheduled = true;
+
+        const cleanup = () => {
+          void Promise.all(
+            files
+              .filter((file) => file.path)
+              .map((file) =>
+                fs.promises.unlink(file.path).catch((error: NodeJS.ErrnoException) => {
+                  if (error.code !== 'ENOENT') throw error;
+                })
+              )
+          ).catch((error) => {
+            console.error('Failed to remove temporary upload files:', error);
+          });
+        };
+
+        if (res.destroyed) {
+          cleanup();
+        } else {
+          res.once('finish', cleanup);
+          res.once('close', cleanup);
+        }
+      };
+
+      if (parseError) {
+        scheduleCleanup();
+        return next(parseError);
+      }
+
+      Promise.allSettled(
+        files.map(async (file) => {
+          if (!file.path) {
+            throw new Error('Uploaded file is missing its temporary file path');
+          }
+
+          const location = await uploadToSpaces({
+            body: createReadStream(file.path),
+            fileName: file.originalname,
+            contentType: file.mimetype,
+            folder: file.fieldname,
+            contentLength: file.size,
+          });
+          Object.assign(file, { location });
+        })
+      )
+        .then((results) => {
+          scheduleCleanup();
+          const failedUpload = results.find(
+            (result): result is PromiseRejectedResult =>
+              result.status === 'rejected'
+          );
+          if (failedUpload) return next(failedUpload.reason);
+          next();
+        });
+    });
+  };
 };
 
 export default fileUploadHandler;
