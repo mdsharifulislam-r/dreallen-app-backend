@@ -68,11 +68,14 @@ const createVideo = catchAsync(async (req: Request, res: Response) => {
 
   let duration = req.body.duration;
 
-  const localVideoPath =
-    videoFile?.path ||
-    (req.body.video && !/^https?:\/\//i.test(req.body.video)
-      ? path.join(process.cwd(), 'uploads', req.body.video)
-      : undefined);
+  let localVideoPath = videoFile?.path;
+  if (!localVideoPath && req.body.video) {
+    if (/^https:\/\//i.test(req.body.video)) {
+      localVideoPath = req.body.video;
+    } else if (!/^http:\/\//i.test(req.body.video)) {
+      localVideoPath = path.join(process.cwd(), 'uploads', req.body.video);
+    }
+  }
   if (localVideoPath) {
     const autoDuration = await getAudioDuration(localVideoPath);
     if (autoDuration) {

@@ -67,11 +67,14 @@ const createSong = catchAsync(async (req: Request, res: Response) => {
 
   let duration = req.body.duration;
 
-  const audioPath =
-    audioFile?.path ||
-    (req.body.audio && !/^https?:\/\//i.test(req.body.audio)
-      ? path.join(process.cwd(), 'uploads', req.body.audio)
-      : undefined);
+  let audioPath = audioFile?.path;
+  if (!audioPath && req.body.audio) {
+    if (/^https:\/\//i.test(req.body.audio)) {
+      audioPath = req.body.audio;
+    } else if (!/^http:\/\//i.test(req.body.audio)) {
+      audioPath = path.join(process.cwd(), 'uploads', req.body.audio);
+    }
+  }
   if (audioPath) {
     const autoDuration = await getAudioDuration(audioPath);
     if (autoDuration) {
