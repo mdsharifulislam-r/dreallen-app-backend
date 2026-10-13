@@ -6,7 +6,8 @@ import config, { validateSpacesConfig } from './config';
 import { seedSuperAdmin } from './DB/seedAdmin';
 import { socketHelper } from './helpers/socketHelper';
 import { errorLogger, logger } from './shared/logger';
-
+import dns from 'dns';
+dns.setServers(['8.8.8.8', '8.8.4.4']);
 for (const warning of validateSpacesConfig()) {
   logger.warn(warning);
 }
@@ -18,12 +19,25 @@ process.on('uncaughtException', error => {
 });
 
 let server: any;
+
+process.on('unhandledRejection', error => {
+  errorLogger.error('UnhandleRejection Detected', error);
+  if (server) {
+    server.close(() => process.exit(1));
+  } else {
+    process.exit(1);
+  }
+});
+
 async function main() {
   try {
-    console.log(config.database_url);
-    mongoose.connect(config.database_url as string);
+    if (!config.database_url) {
+      throw new Error('DATABASE_URL is not configured');
+    }
+
+    await mongoose.connect(config.database_url);
     logger.info(colors.green('🚀 Database connected successfully'));
-    
+
     //Seed Super Admin after database connection is successful
     await seedSuperAdmin();
 
@@ -44,23 +58,14 @@ async function main() {
       },
     });
     socketHelper.socket(io);
-    //@ts-ignore
-    global.io = io;
+    (global as any).io = io;
   } catch (error) {
-    errorLogger.error(colors.red('🤢 Failed to connect Database'));
+    const detail = error instanceof Error ? error.message : String(error);
+    errorLogger.error(
+      colors.red(`🤢 Failed to start server: ${detail}`)
+    );
+    process.exit(1);
   }
-
-  //handle unhandleRejection
-  process.on('unhandledRejection', error => {
-    if (server) {
-      server.close(() => {
-        errorLogger.error('UnhandleRejection Detected', error);
-        process.exit(1);
-      });
-    } else {
-      process.exit(1);
-    }
-  });
 }
 
 main();
