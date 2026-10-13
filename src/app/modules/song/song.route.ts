@@ -13,4 +13,7 @@ router.get('/:id', auth(USER_ROLES.ADMIN, USER_ROLES.USER, USER_ROLES.SUPER_ADMI
 router.patch('/:id/favorite', auth(USER_ROLES.ADMIN, USER_ROLES.USER, USER_ROLES.SUPER_ADMIN), SongController.toggleFavorite);
 router.post('/play/:id', auth(USER_ROLES.ADMIN, USER_ROLES.USER, USER_ROLES.SUPER_ADMIN), SongController.recordPlay);
 
+router.patch('/:id', auth(USER_ROLES.ADMIN, USER_ROLES.USER, USER_ROLES.SUPER_ADMIN), fileUploadHandler(), SongController.updateSong);
+router.delete('/:id', auth(USER_ROLES.ADMIN, USER_ROLES.USER, USER_ROLES.SUPER_ADMIN), SongController.deleteSong);
+
 export const SongRoutes = router;

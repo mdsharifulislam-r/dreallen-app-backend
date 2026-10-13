@@ -129,10 +129,28 @@ const createSongInDB = async (payload: Partial<ISong>): Promise<ISong> => {
   return await Song.create(payload);
 };
 
+const deleteSongInDB = async (id: string): Promise<ISong> => {
+  const song = await Song.findByIdAndDelete(id);
+  if (!song) {
+    throw new ApiError(StatusCodes.NOT_FOUND, 'Song not found');
+  }
+  return song;
+};
+
+const updateSongInDB = async (id: string, payload: Partial<ISong>): Promise<ISong> => {
+  const song = await Song.findByIdAndUpdate(id, payload, { new: true });
+  if (!song) {
+    throw new ApiError(StatusCodes.NOT_FOUND, 'Song not found');
+  }
+  return song;
+};
+
 export const SongService = {
   getAllSongsFromDB,
   getSongByIdFromDB,
   toggleFavoriteInDB,
   recordPlayInDB,
   createSongInDB,
+  deleteSongInDB,
+  updateSongInDB,
 };
